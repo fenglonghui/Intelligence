@@ -1,5 +1,12 @@
 title: 个人网站
+email: fenglh04@163.com
 description: 知识分享 for GitHub Pages.
+baseurl: "/Intelligence"
+url: "https://fenglonghui.github.io" 
 show_downloads: false
 google_analytics:
+markdown: kramdown
 theme: jekyll-theme-architect
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
