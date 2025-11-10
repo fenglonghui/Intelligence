@@ -1,7 +1,7 @@
 #### 大模型的分布式推理概述案例场景：
      1.单卡显存不足：如QwQ-32B（320亿参数）需在双A6000显卡上部署。2.高并发请求：在线服务需同时处理多用户请求，分布式推理通过连续批处理（Continuous Batching）提升效率。
 
-     注意: Ollama 不支持并发性(多卡部署), 支持量化, Ollama、vLLM、LMDeploy都支持量化
+     注意: Ollama 不支持并发性(即:多卡部署), 支持量化, Ollama、vLLM、LMDeploy都支持量化,  Ollama 是一个多模型框架, vllm、LMDeploy 是单模型框架
 
 #### vLLM的分布式推理实现vLLM通过PagedAttention和张量并行技术优化显存管理和计算效率，支持多GPU推理。
      1. 核心机制
