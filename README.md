@@ -143,7 +143,17 @@
 #####          K V 量化是对模型运行时的 K V cache缓存进行量化, 不是模型参数的量化,因此 几乎不影响精度 8bit量化几乎对精度无损, 4bit量化对精度影响在可接受范围内, 这种被推荐的
 #####          量化不仅节省了显存, 而且提高了性能
 
-               量化命令: lmdeploy serve api_server /root/autodl-tmp/llms/Qwen/Qwen1___5-1___8B-Chat --quant-policy 8
+               量化命令: 
+                    lmdeploy serve api_server /root/autodl-tmp/llms/Qwen/Qwen1___5-1___8B-Chat --quant-policy 8
+               
+                         HINT:    Please open http://0.0.0.0:23333 in a browser for detailed api usage!!!
+                         HINT:    Please open http://0.0.0.0:23333 in a browser for detailed api usage!!!
+                         HINT:    Please open http://0.0.0.0:23333 in a browser for detailed api usage!!!
+                         INFO:     Started server process [14647]
+                         INFO:     Waiting for application startup.
+                         INFO:     Application startup complete.
+                         INFO:     Uvicorn running on http://0.0.0.0:23333 (Press CTRL+C to quit)
+
 
 
           W4A16 模型量化和部署
