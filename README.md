@@ -78,7 +78,7 @@
         #安装lmdeploy及其依赖
         pip install timm==1.0.8 openai==1.40.3 lmdeploy[all]==0.5.3
 
-####        这个环境搭建报错!!!
+        上面这个环境搭建报错!!!
 
 ####   使用LMdeploy 验证模型
        在量化工作正式开始前，我们还需要验证一下获取的模型文件能否正常工作。进入创建好的环境并启动 InternLM2_5-7b-chat。
@@ -112,7 +112,7 @@
           以命令行形式连接API服务器
              lmdeploy serve api_client http://localhost:23333
 ####   2.1 LMDeploy Lite
-           随着模型变得越来越大，我们需要一些大模型压缩技术来降低模型部署的成本，并提升模型的推理性能。LMDeploy 提供了权重量化和 k/v cache两种策略。          
+           随着模型变得越来越大，我们需要一些大模型压缩技术来降低模型部署的成本，并提升模型的推理性能。LMDeploy 提供了"权重量化"和 "K/V Cache量化" 两种策略。          
 
 ####     设置最大kv cache缓存大小, 进行量化 (推荐量化)
               kv cache是一种缓存技术，通过存储键值对的形式来复用计算结果，以达到提高性能和降低内存消耗的目的。
@@ -142,6 +142,8 @@
 
 #####          K V 量化是对模型运行时的 K V cache缓存进行量化, 不是模型参数的量化,因此 几乎不影响精度 8bit量化几乎对精度无损, 4bit量化对精度影响在可接受范围内, 这种被推荐的
 #####          量化不仅节省了显存, 而且提高了性能
+
+               量化命令: lmdeploy serve api_server /root/autodl-tmp/llms/Qwen/Qwen1___5-1___8B-Chat --quant-policy 8
 
 
           W4A16 模型量化和部署
