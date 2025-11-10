@@ -167,7 +167,7 @@
                   --search-scale False \
                   --work-dir /root/models/internlm2_5-7b-chat-w4a16-4bit
 
-             Loading calibrate dataset ...  执行时, 在加载量化校准数据集时, 下载不到该数据集而导致执行命令失败!!!!
+             Loading calibrate dataset ...  执行时, 在加载量化校准数据集(allenai/c4)时, 下载不到该数据集而导致执行命令失败!!!!
              该数据集是在国外的, 国内无法下载下来
              不支持自定义数据集
              通过梯子在本地下载该数据集,然后传到服务器中去也无法使用, 只能通过Huggingface上下载该数据集!!!
