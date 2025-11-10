@@ -114,17 +114,17 @@
 ####   2.1 LMDeploy Lite
            随着模型变得越来越大，我们需要一些大模型压缩技术来降低模型部署的成本，并提升模型的推理性能。LMDeploy 提供了权重量化和 k/v cache两种策略。          
 
-           设置最大kv cache缓存大小
+####     设置最大kv cache缓存大小, 进行量化 (推荐量化)
               kv cache是一种缓存技术，通过存储键值对的形式来复用计算结果，以达到提高性能和降低内存消耗的目的。
               在大规模训练和推理中，kv cache可以显著减少重复计算量，从而提升模型的推理速度。理想情况下，kv cache全部存储于显存，以加快访存速度。
               模型在运行时，占用的显存可大致分为三部分：模型参数本身占用的显存、kv cache占用的显存，以及
               中间运算结果占用的显存。LMDeploy的kv cache管理器可以通过设置 --cache-max-entry-count 参数，
               控制kv缓存占用剩余显存的最大比例。默认的比例为0.8。
 
-          设置kv 最大比例为0.4，执行如下命令：
-              lmdeploy chat /root/models/internlm2_5-7b-chat --cache-max-entry-count 0.4
+#####         设置kv 最大比例为0.4，执行如下命令：
+              lmdeploy chat /root/models/internlm2_5-7b-chat --cache-max-entry-count 0.4          # K V 量化
 
-          设置在线 kv cache int4/int8 量化
+#####         设置在线 kv cache int4/int8 量化
               自 v0.4.0 起，LMDeploy 支持在线 kv cache int4/int8 量化，量化方式为 per-head per-token 的非对称量化。
               此外，通过 LMDeploy 应用 kv 量化非常简单，只需要设定 quant_policy 和 cache-max-entrycount 参数。
               目前，LMDeploy 规定 qant_policy=4 表示 kv int4 量化， quant_policy=8 表示 kv int8量化。
