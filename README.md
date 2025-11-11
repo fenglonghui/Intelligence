@@ -162,6 +162,6 @@
            2. Wan-AI/Wan2.2-S2V-14B, 音频驱动的电影视频生成, https://modelscope.cn/models/Wan-AI/Wan2.2-S2V-14B
               音频驱动的电影视频生成
                
-
+           3.Qwen/Qwen3-VL-30B-A3B-Instruct Qwen 系列中功能最强大的视觉语言模型
            
           
