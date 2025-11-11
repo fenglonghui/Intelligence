@@ -1,271 +1,167 @@
-#### 大模型的分布式推理概述案例场景：
-     1.单卡显存不足：如QwQ-32B（320亿参数）需在双A6000显卡上部署。2.高并发请求：在线服务需同时处理多用户请求，分布式推理通过连续批处理（Continuous Batching）提升效率。
+### 多模态大模型的概念与本地部署调用
 
-     注意: Ollama 不支持并发性(即:多卡部署), 支持量化, Ollama、vLLM、LMDeploy都支持量化,  Ollama 是一个多模型框架, vllm、LMDeploy 是单模型框架
+    什么是大模型?
+    基于Transformer架构实现的参数量在1B及以上的人工神经网络模型.
+    
+    什么是多模态?
+    事物的表达或感知的方式, 本质是数据形态, 以多种不同的存在形式而存在.
+    比如: 传递一个信号, 想把苹果传递过来, 你可以使用一段文本, 一张图片, 一个视频, 一个音频表示出来, 这里的每个数据形式否是模态!!!
+    
+    总结起来就是 图像、语音、自然语义 这几种形式存在!!!
 
-#### vLLM的分布式推理实现vLLM通过PagedAttention和张量并行技术优化显存管理和计算效率，支持多GPU推理。
-     1. 核心机制
-        张量并行：通过tensor_parallel_size参数指定GPU数量，模型自动拆分到多卡。
-        PagedAttention：将注意力机制的键值（KV）缓存分块存储，减少显存碎片，提升利用率。
-        连续批处理：动态合并不同长度的请求，减少GPU空闲时间。
 
-#### LMDeploy的分布式推理实现LMDeploy是专为高效部署设计的框架，支持量化技术与分布式推理，尤其适合低显存环境。
-      1. 核心机制
-         张量并行：通过--tp参数指定GPU数量，支持多卡协同计算。KV Cache量化：支持INT8/INT4量化，降低显存占用。动态显存管理：通过--cache-max-entry-count控制KV缓存比例。
+#### 多模态典型任务
 
-####     对于一个7B（70亿）参数的模型，每个参数使用16位浮点数（等于 2个 Byte）表示，则模型的权重大小约为：
-          70×10^9 parameters×2 Bytes/parameter=14GB
-          70亿个参数×每个参数占用2个字节=14GB
-          所以我们需要大于14GB的显存。
-          
-#### 部署商业大模型时, 需要考虑该项目所支持的用户量上限
-          推理大模型时, 需要用到的显存大约为:  用户数据量 + 模型的参数量
+    1.跨模态预训练
+      图像/视频与语言预训练。
+      跨任务预训练
+    
+    2.Language-Audio
+      Text-to-Speech Synthesis: 给定文本，生成一段对应的声音。
+      Audio Captioning：给定一段语音，生成一句话总结并描述主要内容。(不是语音识别)
+    
+    3.Vision-Audio
+      Audio-Visual Speech Recognition(视听语音识别)：给定某人的视频及语音进行语音识别。Video Sound Separation(视频声源分离)：给定视频和声音信号(包含多个声源)，进行声源定位与分离。Image Generation from Audio: 给定声音，生成与其相关的图像。
+      Speech-conditioned Face generation：给定一段话，生成说话人的视频。Audio-Driven 3D Facial Animation：给定一段话与3D人脸模版，生成说话的人脸3D动画。
 
-#### LMDeploy 量化部署
+    4.Vision-Language
+      Image/Video-Text Retrieval (图(视频)文检索): 图像/视频<-->文本的相互检索。
+      Image/Video Captioning(图像/视频描述)：给定一个图像/视频，生成文本描述其主要内容。
+      Visual Question Answering(视觉问答)：给定一个图像/视频与一个问题，预测答案。
+      Image/Video Generation from Text：给定文本，生成相应的图像或视频。
+      Multimodal Machine Translation：给定一种语言的文本与该文本对应的图像，翻译为另外一种语言。
+      Vision-and-Language Navigation(视觉-语言导航)： 给定自然语言进行指导，使得智能体根据视觉传感器导航到特定的目标。
+      Multimodal Dialog(多模态对话)： 给定图像，历史对话，以及与图像相关的问题，预测该问题的回答。
 
-      LMDeploy 量化部署
-         1. 对量化前的模型部署验证
-         2. LMDeploy部署/量化InternLM2.5
-            2.1 LMDeploy Lite
-            2.2 离线转换TurboMind 格式          不推荐, 一般推荐使用在线量化
-            2.3 TurboMind 推理+命令行本地对话
-         3. 网页 Demo 演示
+    5.定位相关的任务
+      Visual Grounding：给定一个图像与一段文本，定位到文本所描述的物体。
+      Temporal Language Localization: 给定一个视频即一段文本，定位到文本所描述的动作(预测起止时间)。
+      Video Summarization from text query：给定一段话(query)与一个视频，根据这段话的内容进行视频摘要，预测视频关键帧(或关键片段)组合为一个短的摘要视频。
+      Video Segmentation from Natural Language Query: 给定一段话(query)与一个视频，分割得到query所指示的物体。
+      Video-Language Inference: 给定视频(包括视频的一些字幕信息)，还有一段文本假设(hypothesis)，判断二者是否存在语义蕴含(二分类)，即判断视频内容是否包含这段文本的语义。Object Tracking from Natural Language Query: 给定一段视频和一些文本，追踪视频中文本所描述的对象。
+      Language-guided Image/Video Editing: 一句话自动修图。给定一段指令(文本)，自动进行图像/视频的编辑。
 
-####     1. 对量化前的模型部署验证
-            查询InternLM2.5-7b-chat的config.json文件可知，该模型的权重被存储为bfloat16格式：
-            {
-              "architectures": [
-              "InternLM2ForCausalLM"
-              ],
-              "attn_implementation": "eager",
-              "auto_map": {
-              "AutoConfig": "configuration_internlm2.InternLM2Config",
-              "AutoModelForCausalLM": "modeling_internlm2.InternLM2ForCausalLM",
-              "AutoModel": "modeling_internlm2.InternLM2ForCausalLM"
-              },
-              "bias": false,
-              "bos_token_id": 1,
-              "eos_token_id": 2,
-              "hidden_act": "silu",
-              "hidden_size": 4096,
-              "initializer_range": 0.02,
-              "intermediate_size": 14336,
-              "max_position_embeddings": 32768,
-              "model_type": "internlm2",
-              "num_attention_heads": 32,
-              "num_hidden_layers": 32,
-              "num_key_value_heads": 8,
-              "pad_token_id": 2,
-              "rms_norm_eps": 1e-05,
-              "rope_scaling": {
-              "type": "dynamic",
-              "factor": 2.0
-              },
-              "rope_theta": 1000000,
-              "tie_word_embeddings": false,
-              "torch_dtype": "bfloat16",
-              "transformers_version": "4.41.0",
-              "use_cache": true,
-              "vocab_size": 92544,
-              "pretraining_tp": 1
-            }
+#### 多模态（多模态大模型的概念与本地部署调用）
+      1. 本地部署CogVideoX-5B文生视频模型
+      1.1 模型介绍
+      1.2 环境安装
+      1.3模型下载
+      1.4 运行代码
+      1.5 生成效果
+      2. 使用ollama部署Llama-3.2-11B-Vision-Instruct-GGUF实现视觉问答
+      2.1 模型介绍
+      2.2 预期用途
+      2.3 安装ollama
+      2.4 安装 Llama 3.2 Vision 模型
+      2.5 运行 Llama 3.2-Vision
 
-####   创建环境，安装依赖
-        conda create -n lmdeploy python=3.10 -y
-        conda activate lmdeploy
-        conda install pytorch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 pytorchcuda=12.1 -c pytorch -c nvidia -y
-        #以上基础环境有的可以忽略
-        #安装lmdeploy及其依赖
-        pip install timm==1.0.8 openai==1.40.3 lmdeploy[all]==0.5.3
+##### 1. 本地部署CogVideoX-5B文生视频模型
+      模型介绍
+          CogVideoX是 清影 同源的开源版本视频生成模型。下表展示我们在本代提供的视频生成模型列表相关信息。
 
-        上面这个环境搭建报错!!!
+      具体参数参照 modelscope 或 hunggingface上模型的参数
 
-####   使用LMdeploy 验证模型
-       在量化工作正式开始前，我们还需要验证一下获取的模型文件能否正常工作。进入创建好的环境并启动 InternLM2_5-7b-chat。
+      1.2 环境安装
+          # diffusers>=0.30.3
+          # transformers>=0.44.2
+          # accelerate>=0.34.0
+          # imageio-ffmpeg>=0.5.1
+          pip install --upgrade transformers accelerate diffusers imageio-ffmpeg
 
-       lmdeploy chat /root/models/internlm2_5-7b-chat
+      1.3 模型下载
+          git clone https://www.modelscope.cn/ZhipuAI/CogVideoX-5b.git
 
-####   2. LMDeploy部署/量化InternLM2.5
+      1.4 运行代码
+          import torch
+          from diffusers import CogVideoXPipeline
+          from diffusers.utils import export_to_video
+          prompt = "A panda, dressed in a small, red jacket and a tiny hat, sits on a
+          wooden stool in a serene bamboo forest. The panda's fluffy paws strum a miniature
+          acoustic guitar, producing soft, melodic tunes. Nearby, a few other pandas
+          gather, watching curiously and some clapping in rhythm. Sunlight filters through
+          the tall bamboo, casting a gentle glow on the scene. The panda's face is
+          expressive, showing concentration and joy as it plays. The background includes a
+          small, flowing stream and vibrant green foliage, enhancing the peaceful and
+          magical atmosphere of this unique musical performance."
+          pipe = CogVideoXPipeline.from_pretrained(
+          "THUDM/CogVideoX-5b",
+          torch_dtype=torch.bfloat16
+          )
+          pipe.enable_sequential_cpu_offload()
+          pipe.vae.enable_tiling()
+          pipe.vae.enable_slicing()
+          video = pipe(
+          prompt=prompt,
+          num_videos_per_prompt=1,
+          num_inference_steps=50,
+          num_frames=49,
+          guidance_scale=6,
+          generator=torch.Generator(device="cuda").manual_seed(42),
+          ).frames[0]
+          export_to_video(video, "output.mp4", fps=8)
 
-          InternLM2.5部署
-              lmdeploy serve api_server \
-                  /root/models/internlm2_5-7b-chat \
-                  --model-format hf \
-                  --quant-policy 0 \
-                  --server-name 0.0.0.0 \
-                  --server-port 23333 \
-                  --tp 1
+      1.5 生成效果
+          忽略……!!!
+        
+#### 2. 使用ollama部署Llama-3.2-11B-Vision-InstructGGUF实现视觉问答
 
-          命令说明：
-              lmdeploy serve api_server：这个命令用于启动API服务器。
-              /root/models/internlm2_5-7b-chat：这是模型的路径。
-              --model-format hf：这个参数指定了模型的格式。hf代表“Hugging Face”格式。
-              --quant-policy 0：这个参数指定了量化策略。
-              --server-name 0.0.0.0：这个参数指定了服务器的名称。在这里，0.0.0.0是一个特殊的IP地址，它表
-              示所有网络接口。
-              --server-port 23333：这个参数指定了服务器的端口号。在这里，23333是服务器将监听的端口号。
-              --tp 1：这个参数表示并行数量（GPU数量）。
+        2.1 模型介绍
+            Llama 3.2-Vision 是一系列多模态大语言模型（LLM），包括预训练和指令调优的图像推理生成模型，
+            大小分别为11B和90B（输入为文本+图像/输出为文本）。Llama 3.2-Vision 指令调优模型针对视觉识
+            别、图像推理、字幕生成以及回答关于图像的一般问题进行了优化。这些模型在常见的行业基准测试中
+            表现优于许多可用的开源和闭源多模态模型。
 
-          启动完成日志输出
-             访问 http://127.0.0.1:23333/ ，可以看到API 信息
+            模型开发者: Meta
+               模型架构: Llama 3.2-Vision 基于 Llama 3.1 文本模型构建，后者是一个使用优化的Transformer架构的
+               自回归语言模型。调优版本使用有监督的微调（SFT）和基于人类反馈的强化学习（RLHF）来与人类对
+               有用性和安全性的偏好保持一致。为了支持图像识别任务，Llama 3.2-Vision 模型使用了单独训练的视
+               觉适配器，该适配器与预训练的 Llama 3.1 语言模型集成。适配器由一系列交叉注意力层组成，将图像
+               编码器表示传递给核心LLM。
 
-          以命令行形式连接API服务器
-             lmdeploy serve api_client http://localhost:23333
-####   2.1 LMDeploy Lite
-           随着模型变得越来越大，我们需要一些大模型压缩技术来降低模型部署的成本，并提升模型的推理性能。LMDeploy 提供了"权重量化"和 "K/V Cache量化" 两种策略。          
+            支持的语言: 对于纯文本任务，官方支持英语、德语、法语、意大利语、葡萄牙语、印地语、西班牙语和
+            泰语。Llama 3.2 的训练数据集包含了比这八种语言更广泛的语言。注意，对于图像+文本应用，仅支持
+            英语。
+            开发者可以在遵守 Llama 3.2 社区许可证和可接受使用政策的前提下，对 Llama 3.2 模型进行其他语言
+            的微调。开发者始终应确保其部署，包括涉及额外语言的部署，是安全且负责任的。
+            模型发布日期: 2024年9月25日
 
-####     设置最大kv cache缓存大小, 进行量化 (推荐量化)
-              kv cache是一种缓存技术，通过存储键值对的形式来复用计算结果，以达到提高性能和降低内存消耗的目的。
-              在大规模训练和推理中，kv cache可以显著减少重复计算量，从而提升模型的推理速度。理想情况下，kv cache全部存储于显存，以加快访存速度。
-              模型在运行时，占用的显存可大致分为三部分：模型参数本身占用的显存、kv cache占用的显存，以及
-              中间运算结果占用的显存。LMDeploy的kv cache管理器可以通过设置 --cache-max-entry-count 参数，
-              控制kv缓存占用剩余显存的最大比例。默认的比例为0.8。
 
-#####         设置kv 最大比例为0.4，执行如下命令：
-              lmdeploy chat /root/models/internlm2_5-7b-chat --cache-max-entry-count 0.4          # K V 量化
+      2.2 预期用途
+          预期用途案例： Llama 3.2-Vision旨在用于商业和研究用途。经过指令调优的模型适用于视觉识别、图
+          像推理、字幕添加以及带有图像的助手式聊天，而预训练模型可以适应多种图像推理任务。此外，由于
+          Llama 3.2-Vision能够接受图像和文本作为输入，因此还可能包括以下用途：
+          1. 视觉问答（VQA）与视觉推理：想象一台机器能够查看图片并理解您对其提出的问题。
+          2. 文档视觉问答（DocVQA）：想象计算机能够理解文档（如地图或合同）中的文本和布局，并直接
+          从图像中回答问题。
+          3. 图像字幕：图像字幕架起了视觉与语言之间的桥梁，提取细节，理解场景，然后构造一两句讲述故
+          事的话。
+          4. 图像-文本检索：图像-文本检索就像是为图像及其描述做媒人。类似于搜索引擎，但这种引擎既理
+          解图片也理解文字。
+          5. 视觉接地：视觉接地就像将我们所见与所说连接起来。它关乎于理解语言如何引用图像中的特定部
+          分，允许AI模型基于自然语言描述来精确定位对象或区域。
 
-#####         设置在线 kv cache int4/int8 量化
-              自 v0.4.0 起，LMDeploy 支持在线 kv cache int4/int8 量化，量化方式为 per-head per-token 的非对称量化。
-              此外，通过 LMDeploy 应用 kv 量化非常简单，只需要设定 quant_policy 和 cache-max-entrycount 参数。
-              目前，LMDeploy 规定 qant_policy=4 表示 kv int4 量化， quant_policy=8 表示 kv int8量化。
+####   2.3 安装ollama
+          # ollama版本需大于等于0.4.0
+          curl -fsSL https://ollama.com/install.sh | sh
+          # 查看ollama版本
+          ollama --version
 
-              lmdeploy serve api_server \
-                  /root/models/internlm2_5-7b-chat \
-                  --model-format hf \
-                  --quant-policy 4 \
-                  --cache-max-entry-count 0.4\
-                  --server-name 0.0.0.0 \
-                  --server-port 23333 \
-                  --tp 1
+####   2.4 安装 Llama 3.2 Vision 模型
+           ollama run llama3.2-vision:11b
 
-               相比使用BF16精度的kv cache，int4的Cache可以在相同4GB的显存下只需要4位来存储一个数值，而BF16需要16位。这意味着int4的Cache可以存储的元素数量是BF16的四倍。
+####   2.5 运行 Llama 3.2-Vision
+           将 images.png` 替换为你选择的图像路径。模型将分析图像并根据其理解提供响应。
 
-#####          K V 量化是对模型运行时的 K V cache缓存进行量化, 不是模型参数的量化,因此 几乎不影响精度 8bit量化几乎对精度无损, 4bit量化对精度影响在可接受范围内, 这种被推荐的
-#####          量化不仅节省了显存, 而且提高了性能
+            ollama run x/llama3.2-vision:latest "Which era does this piece belong to? Give details about the era: images.png"
 
-               量化命令: 
-                    lmdeploy serve api_server /root/autodl-tmp/llms/Qwen/Qwen1___5-1___8B-Chat --quant-policy 8
+####   2.6 推荐模型
+
+           1. Wan-AI/Wan2.2-Animate-14B。角色动画和替换, https://modelscope.cn/models/Wan-AI/Wan2.2-Animate-14B
+              视频驱动图片
+
+           2. Wan-AI/Wan2.2-S2V-14B, 音频驱动的电影视频生成, https://modelscope.cn/models/Wan-AI/Wan2.2-S2V-14B
+              音频驱动的电影视频生成
                
-                         HINT:    Please open http://0.0.0.0:23333 in a browser for detailed api usage!!!
-                         HINT:    Please open http://0.0.0.0:23333 in a browser for detailed api usage!!!
-                         HINT:    Please open http://0.0.0.0:23333 in a browser for detailed api usage!!!
-                         INFO:     Started server process [14647]
-                         INFO:     Waiting for application startup.
-                         INFO:     Application startup complete.
-                         INFO:     Uvicorn running on http://0.0.0.0:23333 (Press CTRL+C to quit)
 
-
-
-          W4A16 模型量化和部署
-              准确说，模型量化是一种优化技术，旨在减少机器学习模型的大小并提高其推理速度。量化通过将模型
-              的权重和激活从高精度（如16位浮点数）转换为低精度（如8位整数、4位整数、甚至二值网络）来实
-              现。
-              那么标题中的W4A16又是什么意思呢？
-              W4：这通常表示权重量化为4位整数（int4）。这意味着模型中的权重参数将从它们原始的浮点表
-              示（例如FP32、BF16或FP16，Internlm2.5精度为BF16）转换为4位的整数表示。这样做可以显
-              著减少模型的大小。
-              A16：这表示激活（或输入/输出）仍然保持在16位浮点数（例如FP16或BF16）。激活是在神经网
-              络中传播的数据，通常在每层运算之后产生。
-              因此，W4A16的量化配置意味着：
-              权重被量化为4位整数。
-              激活保持为16位浮点数。
-
-          在最新的版本中，LMDeploy使用的是AWQ算法，能够实现模型的4bit权重量化。输入以下指令，执行量化工作。(本步骤耗时较长，请耐心等待)
-
-             lmdeploy lite auto_awq \
-                  /root/models/internlm2_5-7b-chat \
-                  --calib-dataset 'ptb' \
-                  --calib-samples 128 \
-                  --calib-seqlen 2048 \
-                  --w-bits 4 \
-                  --w-group-size 128 \
-                  --batch-size 1 \
-                  --search-scale False \
-                  --work-dir /root/models/internlm2_5-7b-chat-w4a16-4bit
-
-             Loading calibrate dataset ...  执行时, 在加载量化校准数据集(allenai/c4)时, 下载不到该数据集而导致执行命令失败!!!!
-             该数据集是在国外的, 国内无法下载下来
-             不支持自定义数据集
-             通过梯子在本地下载该数据集,然后传到服务器中去也无法使用, 只能通过Huggingface上下载该数据集!!!
-
-            命令解释：
-                lmdeploy lite auto_awq: lite这是LMDeploy的命令，用于启动量化过程，而auto_awq代表自动权重量化（auto-weight-quantization）。
-                /root/models/internlm2_5-7b-chat: 模型文件的路径。
-                --calib-dataset 'ptb': 这个参数指定了一个校准数据集，这里使用的是’ptb’（Penn Treebank，一
-                个常用的语言模型数据集）。
-                --calib-samples 128: 这指定了用于校准的样本数量—128个样本
-                --calib-seqlen 2048: 这指定了校准过程中使用的序列长度—1024
-                --w-bits 4: 这表示权重（weights）的位数将被量化为4位。
-                --work-dir /root/models/internlm2_5-7b-chat-w4a16-4bit: 这是工作目录的路径，用于存储量
-                化后的模型和中间结果。
-
-            等待推理完成，便可以直接在你设置的目标文件夹看到对应的模型文件。
-            推理后的模型和原本的模型区别是模型文件大小以及占据显存大小。
-            我们可以输入如下指令查看在当前目录中显示所有子目录的大小。
-
-        cd /root/models/
-        du -sh *
-
-        输出结果如下。(其余文件夹都是以软链接的形式存在的，不占用空间，故显示为0)
-            0 InternVL2-26B
-            0 internlm2_5-7b-chat
-            4.9G internlm2_5-7b-chat-w4a16-4bit
-           (lmdeploy) root@intern-studio-50009084:~/models#
-
-
-        那么原模型大小呢？输入以下指令查看。
-            cd /root/share/new_models/Shanghai_AI_Laboratory/
-            du -sh *
-
-        对比发现，模型的大小15G 和 4.9G ,差异还是比较大。
-        可以输入下面的命令启动量化后的模型
-
-            lmdeploy chat /root/models/internlm2_5-7b-chat-w4a16-4bit/ --model-format awq
-
-        W4A16 量化+ KV cache+KV cache 量化
-
-            输入以下指令，让我们同时启用量化后的模型、设定kv cache占用和kv cache int4量化。
-
-            lmdeploy serve api_server \
-                /root/models/internlm2_5-7b-chat-w4a16-4bit/ \
-                --model-format awq \
-                --quant-policy 4 \
-                --cache-max-entry-count 0.4\
-                --server-name 0.0.0.0 \
-                --server-port 23333 \
-                --tp 1
-
-      2.2 离线转换TurboMind 格式
-
-          离线转换需要在启动服务之前，将模型转为 lmdeploy TurboMind 的格式，如下所示。
-          # 转换模型（FastTransformer格式） TurboMind
-          lmdeploy convert internlm-chat-7b /path/to/internlm-chat-7b
-
-          执行完成后将会在当前目录生成一个 workspace 的文件夹。这里面包含的就是 TurboMind 和 Triton
-          “模型推理”需要到的文件。
-          目录如下图所示。
-
-            weights 和 tokenizer 目录分别放的是拆分后的参数和 Tokenizer。如果我们进一步查看 weights 的目录，就会发现参数是按层和模块拆开的，如下图所示
-
-
-          每一份参数第一个 0 表示“层”的索引，后面的那个0表示 Tensor 并行的索引，因为我们只有一张卡，所以被拆分成 1 份。
-          如果有两张卡可以用来推理，则会生成0和1两份，也就是说，会把同一个参数拆成两份。
-          比如 layers.0.attention.w_qkv.0.weight 会变成 layers.0.attention.w_qkv.0.weight 和 layers.0.attention.w_qkv.1.weight 。
-          执行 lmdeploy convert 命令时，可以通过 --tp 指定（tp 表示 tensor parallel，该参数默认值为1也就是一张卡）。
-
-      2.3 TurboMind 推理+命令行本地对话
-          模型转换完成后，我们就具备了使用模型推理的条件，接下来就可以进行真正的模型推理环节。
-          我们可以尝试本地对话，在这里其实是跳过 API Server 直接调用 TurboMind
-          执行命令如下。
-
-          lmdeploy chat ./workspace
-
-          启动后就可以和它进行对话了。
-
-      3. 网页 Demo 演示
-
-          这一部分主要是将 Gradio 作为前端 Demo 演示。
-          # Gradio+ApiServer。必须先开启 Server，此时 Gradio 为 Client
-          lmdeploy serve gradio http://0.0.0.0:23333
-
+           
           
