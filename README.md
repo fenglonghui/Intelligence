@@ -1,167 +1,109 @@
-### 多模态大模型的概念与本地部署调用
+### 构建知识库分享总结
 
-    什么是大模型?
-    基于Transformer架构实现的参数量在1B及以上的人工神经网络模型.
-    
-    什么是多模态?
-    事物的表达或感知的方式, 本质是数据形态, 以多种不同的存在形式而存在.
-    比如: 传递一个信号, 想把苹果传递过来, 你可以使用一段文本, 一张图片, 一个视频, 一个音频表示出来, 这里的每个数据形式否是模态!!!
-    
-    总结起来就是 图像、语音、自然语义 这几种形式存在!!!
+    使用LLamaIndex 调用本地大模型, 向大模型直接提问, 如果大模型在没接触过的知识领域, 同样也会回复,但回答的结果是一本正紧的胡说八道, 即产生大模型幻觉
 
+    同样的逻辑: 大模型本地私有化部署,同样会产生大模型幻觉, 这个问题的解决方案就是构建知识库(即 构建RAG)
 
-#### 多模态典型任务
+    RAG有一定的执行流程:
 
-    1.跨模态预训练
-      图像/视频与语言预训练。
-      跨任务预训练
-    
-    2.Language-Audio
-      Text-to-Speech Synthesis: 给定文本，生成一段对应的声音。
-      Audio Captioning：给定一段语音，生成一句话总结并描述主要内容。(不是语音识别)
-    
-    3.Vision-Audio
-      Audio-Visual Speech Recognition(视听语音识别)：给定某人的视频及语音进行语音识别。Video Sound Separation(视频声源分离)：给定视频和声音信号(包含多个声源)，进行声源定位与分离。Image Generation from Audio: 给定声音，生成与其相关的图像。
-      Speech-conditioned Face generation：给定一段话，生成说话人的视频。Audio-Driven 3D Facial Animation：给定一段话与3D人脸模版，生成说话的人脸3D动画。
+        用户向大模型提问, 大模型对用户问题语义进行理解并分析, 然后交给知识库, 知识库会进行向量检索查询, 大模型依据知识库检索查询结果进行匹配、总结,最后输出答复结果
 
-    4.Vision-Language
-      Image/Video-Text Retrieval (图(视频)文检索): 图像/视频<-->文本的相互检索。
-      Image/Video Captioning(图像/视频描述)：给定一个图像/视频，生成文本描述其主要内容。
-      Visual Question Answering(视觉问答)：给定一个图像/视频与一个问题，预测答案。
-      Image/Video Generation from Text：给定文本，生成相应的图像或视频。
-      Multimodal Machine Translation：给定一种语言的文本与该文本对应的图像，翻译为另外一种语言。
-      Vision-and-Language Navigation(视觉-语言导航)： 给定自然语言进行指导，使得智能体根据视觉传感器导航到特定的目标。
-      Multimodal Dialog(多模态对话)： 给定图像，历史对话，以及与图像相关的问题，预测该问题的回答。
+    要实现这整个流程, 就需要有知识库, 即 RAG!!!
 
-    5.定位相关的任务
-      Visual Grounding：给定一个图像与一段文本，定位到文本所描述的物体。
-      Temporal Language Localization: 给定一个视频即一段文本，定位到文本所描述的动作(预测起止时间)。
-      Video Summarization from text query：给定一段话(query)与一个视频，根据这段话的内容进行视频摘要，预测视频关键帧(或关键片段)组合为一个短的摘要视频。
-      Video Segmentation from Natural Language Query: 给定一段话(query)与一个视频，分割得到query所指示的物体。
-      Video-Language Inference: 给定视频(包括视频的一些字幕信息)，还有一段文本假设(hypothesis)，判断二者是否存在语义蕴含(二分类)，即判断视频内容是否包含这段文本的语义。Object Tracking from Natural Language Query: 给定一段视频和一些文本，追踪视频中文本所描述的对象。
-      Language-guided Image/Video Editing: 一句话自动修图。给定一段指令(文本)，自动进行图像/视频的编辑。
+#### 1.构建知识库
+       要构建知识库, 就需要用到LLamaIndex中的"数据连接器", 本项目是读取本地Markdown文件内容(说明:内容质量混乱), 
+       所以就需要使用数据连接器 SimpleDirectoryReader(并行处理数据)
 
-#### 多模态（多模态大模型的概念与本地部署调用）
-      1. 本地部署CogVideoX-5B文生视频模型
-      1.1 模型介绍
-      1.2 环境安装
-      1.3模型下载
-      1.4 运行代码
-      1.5 生成效果
-      2. 使用ollama部署Llama-3.2-11B-Vision-Instruct-GGUF实现视觉问答
-      2.1 模型介绍
-      2.2 预期用途
-      2.3 安装ollama
-      2.4 安装 Llama 3.2 Vision 模型
-      2.5 运行 Llama 3.2-Vision
-
-##### 1. 本地部署CogVideoX-5B文生视频模型
-      模型介绍
-          CogVideoX是 清影 同源的开源版本视频生成模型。下表展示我们在本代提供的视频生成模型列表相关信息。
-
-      具体参数参照 modelscope 或 hunggingface上模型的参数
-
-      1.2 环境安装
-          # diffusers>=0.30.3
-          # transformers>=0.44.2
-          # accelerate>=0.34.0
-          # imageio-ffmpeg>=0.5.1
-          pip install --upgrade transformers accelerate diffusers imageio-ffmpeg
-
-      1.3 模型下载
-          git clone https://www.modelscope.cn/ZhipuAI/CogVideoX-5b.git
-
-      1.4 运行代码
-          import torch
-          from diffusers import CogVideoXPipeline
-          from diffusers.utils import export_to_video
-          prompt = "A panda, dressed in a small, red jacket and a tiny hat, sits on a
-          wooden stool in a serene bamboo forest. The panda's fluffy paws strum a miniature
-          acoustic guitar, producing soft, melodic tunes. Nearby, a few other pandas
-          gather, watching curiously and some clapping in rhythm. Sunlight filters through
-          the tall bamboo, casting a gentle glow on the scene. The panda's face is
-          expressive, showing concentration and joy as it plays. The background includes a
-          small, flowing stream and vibrant green foliage, enhancing the peaceful and
-          magical atmosphere of this unique musical performance."
-          pipe = CogVideoXPipeline.from_pretrained(
-          "THUDM/CogVideoX-5b",
-          torch_dtype=torch.bfloat16
-          )
-          pipe.enable_sequential_cpu_offload()
-          pipe.vae.enable_tiling()
-          pipe.vae.enable_slicing()
-          video = pipe(
-          prompt=prompt,
-          num_videos_per_prompt=1,
-          num_inference_steps=50,
-          num_frames=49,
-          guidance_scale=6,
-          generator=torch.Generator(device="cuda").manual_seed(42),
-          ).frames[0]
-          export_to_video(video, "output.mp4", fps=8)
-
-      1.5 生成效果
-          忽略……!!!
-        
-#### 2. 使用ollama部署Llama-3.2-11B-Vision-InstructGGUF实现视觉问答
-
-        2.1 模型介绍
-            Llama 3.2-Vision 是一系列多模态大语言模型（LLM），包括预训练和指令调优的图像推理生成模型，
-            大小分别为11B和90B（输入为文本+图像/输出为文本）。Llama 3.2-Vision 指令调优模型针对视觉识
-            别、图像推理、字幕生成以及回答关于图像的一般问题进行了优化。这些模型在常见的行业基准测试中
-            表现优于许多可用的开源和闭源多模态模型。
-
-            模型开发者: Meta
-               模型架构: Llama 3.2-Vision 基于 Llama 3.1 文本模型构建，后者是一个使用优化的Transformer架构的
-               自回归语言模型。调优版本使用有监督的微调（SFT）和基于人类反馈的强化学习（RLHF）来与人类对
-               有用性和安全性的偏好保持一致。为了支持图像识别任务，Llama 3.2-Vision 模型使用了单独训练的视
-               觉适配器，该适配器与预训练的 Llama 3.1 语言模型集成。适配器由一系列交叉注意力层组成，将图像
-               编码器表示传递给核心LLM。
-
-            支持的语言: 对于纯文本任务，官方支持英语、德语、法语、意大利语、葡萄牙语、印地语、西班牙语和
-            泰语。Llama 3.2 的训练数据集包含了比这八种语言更广泛的语言。注意，对于图像+文本应用，仅支持
-            英语。
-            开发者可以在遵守 Llama 3.2 社区许可证和可接受使用政策的前提下，对 Llama 3.2 模型进行其他语言
-            的微调。开发者始终应确保其部署，包括涉及额外语言的部署，是安全且负责任的。
-            模型发布日期: 2024年9月25日
-
-
-      2.2 预期用途
-          预期用途案例： Llama 3.2-Vision旨在用于商业和研究用途。经过指令调优的模型适用于视觉识别、图
-          像推理、字幕添加以及带有图像的助手式聊天，而预训练模型可以适应多种图像推理任务。此外，由于
-          Llama 3.2-Vision能够接受图像和文本作为输入，因此还可能包括以下用途：
-          1. 视觉问答（VQA）与视觉推理：想象一台机器能够查看图片并理解您对其提出的问题。
-          2. 文档视觉问答（DocVQA）：想象计算机能够理解文档（如地图或合同）中的文本和布局，并直接
-          从图像中回答问题。
-          3. 图像字幕：图像字幕架起了视觉与语言之间的桥梁，提取细节，理解场景，然后构造一两句讲述故
-          事的话。
-          4. 图像-文本检索：图像-文本检索就像是为图像及其描述做媒人。类似于搜索引擎，但这种引擎既理
-          解图片也理解文字。
-          5. 视觉接地：视觉接地就像将我们所见与所说连接起来。它关乎于理解语言如何引用图像中的特定部
-          分，允许AI模型基于自然语言描述来精确定位对象或区域。
-
-####   2.3 安装ollama
-          # ollama版本需大于等于0.4.0
-          curl -fsSL https://ollama.com/install.sh | sh
-          # 查看ollama版本
-          ollama --version
-
-####   2.4 安装 Llama 3.2 Vision 模型
-           ollama run llama3.2-vision:11b
-
-####   2.5 运行 Llama 3.2-Vision
-           将 images.png` 替换为你选择的图像路径。模型将分析图像并根据其理解提供响应。
-
-            ollama run x/llama3.2-vision:latest "Which era does this piece belong to? Give details about the era: images.png"
-
-####   2.6 推荐模型
-
-           1. Wan-AI/Wan2.2-Animate-14B。角色动画和替换, https://modelscope.cn/models/Wan-AI/Wan2.2-Animate-14B
-              视频驱动图片
-
-           2. Wan-AI/Wan2.2-S2V-14B, 音频驱动的电影视频生成, https://modelscope.cn/models/Wan-AI/Wan2.2-S2V-14B
-              音频驱动的电影视频生成
-               
-           3.Qwen/Qwen3-VL-30B-A3B-Instruct Qwen 系列中功能最强大的视觉语言模型
+       SimpleDirectoryReader 数据连接器: 解析读取本地文件数据
            
-          
+       该数据连接器支持文件类型:  markdown, csv, pdf txt
+
+#### 词嵌入模型Embedding
+
+     Embedding 模型大小和输入数据的维度大小有关
+     唯一的作用功能: 将文本转为词向量, 跟微调的效果没有啥关系
+
+     选择Embedding模型主要还得看物料的实际情况而定, 是纯中文, 还是纯英文 或者是中文和英文都存在
+         1. 如果物料都是中文, 就找一个支持中文比较好的Embedding模型
+         2. 如果物料都是英文, 就找一个支持英文比较好的Embedding模型
+         3. 如果物料中中文、英文都有, 就找一个中英文都支持的Embedding模型
+
+     本项目选择 sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 词嵌入模型, 这是个中文、英文都支持的嵌入模型
+
+     每个大模型的结构中的第一部分都是Embedding部分, 大模型也可以作为词嵌入模型
+
+#### 纯RAG知识库
+        ```
+          安装依赖环境:
+             python 虚拟环境                         3.10
+             llama-index-embeddings-huggingface     0.6.1
+             llama-index-llms-huggingface           0.6.1
+             llama-index                            0.14.4
+             huggingface-hub                        0.36.0
+             transformers                           4.56.2
+    
+             pip install llama-index-llms-huggingface==0.6.1
+             pip install "transformers[torch]==4.56.2"
+             pip install "huggingface_hub[inference]==0.36.0"
+             pip install llama-index==0.14.4
+        ```
+     
+     执行调用过程如下:
+     ```
+         from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+         from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex    # 数据连接器
+         from llama_index.llms.huggingface import HuggingFaceLLM
+        
+        
+         # 词嵌入模型
+         embed_model = HuggingFaceEmbedding(
+           # 指定了一个预训练sentence-transformer模型的路径
+           model_name="/root/autodl-tmp/llms/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+         )
+        
+         Settings.embed_model = embed_model
+         # 读取并加载文档
+         documents = SimpleDirectoryReader("/root/autodl-tmp/project/data01").load_data()
+         # 创建VectorStoreIndex, 并使用之前加载的文档来构建向量索引
+         # 此索引将文档转换为向量, 并存储这些向量以便于快速检索
+         index = VectorStoreIndex.from_documents(documents)  # 调用Embedding模型Settings.embed_model, 对文本进行转换, 将其转换成向量数据
+         # 创建一个查询引擎, 这个引擎可接收以查询并返回相关文档的响应
+         query_engine = index.as_query_engine()  
+         # 这行代码操作会调用大模型Settings.llm对用户问题进行语义化理解并转换成词向量, 然后根据问题词向量和向量库的数据进行相似度检索查询并得到检索结果, 
+         # 最后大模型根据检索结果进行匹配、总结输出回复
+         rsp = query_engine.query("xtuner是什么?")  
+         print(rsp)
+     ```
+
+     同样的, 对于本地私有化的大模型没有接触过的知识领域, 向大模型提问,大模型会一本正经的胡说八道, 即 会产生达模型幻觉 
+
+#### RAG核心流程
+     用户提问  --->   问题解析    --->    RAG检索    --->    生成答案     ---->    引用溯源
+
+
+#### 关于RAG本质认识
+     问题: 文档特别大,查出来的回答效果特别差, 怎么办?
+           首先要明确以下几点:
+               1.文档大小与性能有关, 即索引检索的速度快慢有关, 和检索效果好坏没有关系
+                 文档特别大, 性能差, 即检索速度慢
+               2.检索查询的效果好坏和以下两点有关
+                   a. 与知识库物料有关, 如果物料有错误, 查询出来的结果必然不正确, 必须保证物料库的正确性,这样检索出的结果才能保证其正确性
+                   b. 与大模型能力有关, 即模型对用户问题语义的理解程度不足, 会导致检索的结果不正确或者不完整
+
+###### 知识库的本质: 知识库中存储的数据是大模型回答问题的答案的依据, 并不是存储的答案 !!! 
+       一个好的知识库, 必然是对数据物料有一定要求的, 即物料数据的质量必须要达标
+       那如何才能使数据质量达标呢?
+       知识库数据所涵盖的满足业务相关需求所涉及的整个场景, 这样的数据知识库数据才算是数据质量达标(即数据全集), 否则就不达标
+
+       构建一个好的是RAG系统, 要根据当前业务需求, 以及一定的规则、标准、边界, 对数据集进行结构化处理, 这样才能提供一个高效的、可靠的、准确、高精度的知识库数据
+     
+#### 微调的功能作用
+     通过微调, 提升大模型领域理解能力!!!
+        
+     1.微调可以改变大模型的回答方式(包含回答时的规则、格式)、对话风格
+     2.微调可以改善大模型对问题语义的理解程度, 使其能更好的理解问题的语义, 避免大模型对问题理解的不彻底或理解错误, 而导致检索出不正确的结果!!!
+     3.微调不能改变大模型自身的智能程度, 想通过微调改善大模型回答效果,其效果是有限的,不明显的
+     4.但若 1.知识库的数据质量达标,
+           2.微调了大模型(提供了需求所涉及的大多数主要场景的核心问题), 改善了一定程度的因理解问题不彻底导致检索效果不佳的问题, 
+           3.但有些问题大模型还是理解不到位, 这时候就要考虑大模型的能力了(换能力更强的大模型)
+           
