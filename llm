@@ -506,6 +506,9 @@
             cd LLaMA-Factory
             llamafactory-cli webui
          ```
+         1.1 数据配置
+             将微调数据集放到LLaMA-Factory/data中, 然后在 dataset_info.json 文件中进行注册, 这样就可以在qlora训练时选择数据集,进行训练了
+             路径: /root/autodl-tmp/project/LLaMA-Factory/data/dataset_info.json
 
          2.合并模型
            
