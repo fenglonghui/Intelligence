@@ -207,3 +207,43 @@
                    反之 TOP_K 和 RERANK_TOP_K 的值设置低, 性能就高了(速度快了), 但重排序召回率、端到端命中率的值就低
         
                        
+#### 当前这个RAG知识库最消耗算力的是大模型(Embedding执行一次, 重排序模型相对比较小, 只有大模型最消耗算力(做推理操作)), 那能否进行加速呢?
+     可以加速, 使用 OpenAILike 进行加速
+
+     OpenAILike 是对 OpenAI 模型的轻量级封装，使其兼容提供 OpenAI 兼容 API 的第三方工具。
+
+     安装依赖: pip install llama-index-llms-openai-like
+     
+     部署LMDeploy,并调用该服务.       
+     ```
+            # 采用 openai_like 接口进行加速, 使用LMDeploy部署服务
+            llm = OpenAILike(
+                model="/root/autodl-tmp/llms/Qwen/Qwen1___5-1___8B-Chat-law",
+                api_base="http://localhost:23333/v1",
+                api_key="fake",
+                context_window=4096,
+                is_chat_model=True,
+                is_function_calling_model=False,
+            )
+     ```
+     
+     部署命令: 
+             lmdeploy serve api_server /root/autodl-tmp/llms/Qwen/Qwen1___5-1___8B-Chat-law
+
+     启用新的客户端:
+             python /root/autodl-tmp/project/demo20/test02.py
+         
+     对于问题: 劳动者在什么情况下可以解除劳动合同？依然不能区分法律主体
+              在支持依据里有正确的答复, 有错误的答复, 这个时候就需要大模型有很强的理解问题的能力了!
+              这个时候就不是知识库问题了, , 而是大模型的能力问题了
+
+      这个问题的复杂度加强了, 大模型不能理解分辨法律主体及正确答案,此时换个能力更强的模型就可以从正确和错误的依据里选择出正确答案!!!
+
+
+
+
+    
+
+
+      
+     
