@@ -49,7 +49,7 @@
                摘要文档文件夹 -> 向量数据库 faiss-2
                两者建立1v1对应关系
 
-            2.Small-to-Big 检索策略
+            2.small-to-big 检索策略
               query -> faiss-2 -> faiss-1
 
 #### 7.查询改写(RAG优化检索效果)
