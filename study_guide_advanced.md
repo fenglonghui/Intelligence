@@ -35,6 +35,7 @@
 
 #### 6.3 Small-to-Big 索引策略
         一种高效的检索方法, 适用于处理长文档或多文档场景
+        /Users/fenglonghui/deep_learnin_models/人工智能基础/03_RAG高级技术/index.ipynb
         
         small-to-big 机制:
               1.小规模内容检索
@@ -95,6 +96,9 @@
          将查询改写成文档(Query2Doc) 或为文档生成查询 (Doc2Query), 缓解短文本向量化效果差的问题
          1.将查询改写成文档
          2.为文档生成查询
+
+#####    /Users/fenglonghui/deep_learnin_models/人工智能基础/03_RAG高级技术/index.ipynb
+
 
 #### 7.2 混合检索 (RAG优化检索效果)
          就是根据语义检索和关键字检索进行查询, 会降低检索性能,提高检索精度
