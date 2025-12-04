@@ -12,9 +12,9 @@
           3.按业务需求分割    (推荐)
 
        2.智能文档解析技术
-          使用Mineru做文档转换,转换为markdown文件, 做手工处理数据 (推荐) 
+          使用Mineru做文档转换,转换为markdown文件, 然后线下对markdown文件进行人工处理 (推荐) 
               https://mineru.net/
-          deepseek-ocr处理复杂的pdf文档
+          使用 deepseek-ocr 处理复杂的多模态的pdf文档
 
 #### 4.RAG知识库-数据结构化处理
        按业务需求对数据进行分割整理
