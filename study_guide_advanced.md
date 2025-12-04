@@ -36,6 +36,9 @@
 #### 6.3 Small-to-Big 索引策略
         一种高效的检索方法, 适用于处理长文档或多文档场景
         /Users/fenglonghui/deep_learnin_models/人工智能基础/03_RAG高级技术/index.ipynb
+       
+        Qwen-Agent 构建 RAG:
+          框架地址: https://github.com/QwenLM/Qwen-Agent
         
         small-to-big 机制:
               1.小规模内容检索
