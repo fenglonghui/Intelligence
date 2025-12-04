@@ -1,6 +1,13 @@
 ### 知识库学习导引路径
      RAG知识库的实现框架: 1. LangChain  2.LLamaIndex
 
+     推荐使用阿里大模型平台百炼：https://bailian.console.aliyun.com/
+
+3. 百炼平台使用
+
+    - 注册登录
+    - 申请api key
+
 #### 1. 环境搭建
 
 #### 2.Embedding与向量数据库
