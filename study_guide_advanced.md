@@ -30,7 +30,7 @@
 #### 6.1 改进索引算法
          知识图谱: 利用知识图谱中的语义信息和实体关系, 增强对查询和文档的理解, 提升召回的相关性
 
-#### 7.查询改写(扩展)
+#### 7.查询改写(RAG优化检索效果)
        用户提出的问题目的不清楚(意图模糊), 可通过识别用户意图,对用户问题进行改写,从而提高LLM用户问题回答的效果
        解决方法: 通过查询转换明确用户意图
 
@@ -41,10 +41,40 @@
 
        具体实施: 写个提示词, 通过大模型来重新生成, 连重新理解用户意图, 再来做检索查询
 
-       方案一: 多路召回方案, 支持多查询召回
+       多路召回方案(相似语义改写)
               使用大模型, 将用户查询改写成多个语义相近的查询, 提升召回多样性
+              LangChain的MultiQueryRetriever支持多查询召回, 再进行回答问题
+              LLamaIndex的RAGfusion 支持多查询召回, 再进行回答问题
 
-#### 7.1 混合检索
+       查询改写代码: 
+       ```
+              from langchain.retrievers import MultiQueryRetriever
+       
+              # 创建MultiQueryRetriever
+              retriever = MultiQueryRetriever.from_llm(
+                  retriever=vectorstore.as_retriever(),
+                  llm=llm
+              )
+              
+              # 示例查询
+              query = "客户经理的考核标准是什么？"
+              # 执行查询
+              results = retriever.get_relevant_documents(query)
+              
+              # 打印结果
+              print(f"查询: {query}")
+              print(f"找到 {len(results)} 个相关文档:")
+              for i, doc in enumerate(results):
+                  print(f"\n文档 {i+1}:")
+                  print(doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content)
+       ```
+
+#### 7.1 双向改写 (RAG优化检索效果)
+         将查询改写成文档(Query2Doc) 或为文档生成查询 (Doc2Query), 缓解短文本向量化效果差的问题
+         1.将查询改写成文档
+         2.为文档生成查询
+
+#### 7.2 混合检索 (RAG优化检索效果)
          就是根据语义检索和关键字检索进行查询, 会降低检索性能,提高检索精度
 
 #### 8.多场景多领域RAG知识隔离架构
