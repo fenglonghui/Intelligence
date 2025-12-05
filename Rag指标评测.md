@@ -30,7 +30,7 @@
           
         - 上下文相关性(Context relevancy)
 
-#### RAG评测实现
+#### LangChain实现的RAG评测
 
      1.安装依赖
         pip install pypdf
