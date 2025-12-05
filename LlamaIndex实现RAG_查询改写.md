@@ -68,10 +68,10 @@
     # 8. 定义 RAG Fusion 检索器
     fusion_retriever = QueryFusionRetriever(          ## 查询改写技术
         [index.as_retriever()],
-        similarity_top_k=5, # 检索召回 top k 结果
-        num_queries=3,  # 生成 query 数
+        similarity_top_k=5,                           # 检索召回 top k 结果
+        num_queries=3,                                # 指定 生成 query 数
         use_async=False,
-        # query_gen_prompt="",  # 可以自定义 query 生成的 prompt 模板
+        # query_gen_prompt="",                      # 可以自定义 query 生成的 prompt 模板
     )
     
     # 9. 构建单轮 query engine
