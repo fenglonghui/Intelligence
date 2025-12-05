@@ -61,12 +61,12 @@
     )
     
     # 7. 定义检索后排序模型
-    reranker = LLMRerank(top_n=2)
+    reranker = LLMRerank(top_n=2)                         # 重排序
     # 最终打分低于0.6的文档被过滤掉
-    sp = SimilarityPostprocessor(similarity_cutoff=0.6)
+    sp = SimilarityPostprocessor(similarity_cutoff=0.6)          # 检索后处理
     
     # 8. 定义 RAG Fusion 检索器
-    fusion_retriever = QueryFusionRetriever(
+    fusion_retriever = QueryFusionRetriever(          ## 查询改写技术
         [index.as_retriever()],
         similarity_top_k=5, # 检索召回 top k 结果
         num_queries=3,  # 生成 query 数
