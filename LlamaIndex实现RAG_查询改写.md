@@ -77,7 +77,7 @@
     # 9. 构建单轮 query engine
     query_engine = RetrieverQueryEngine.from_args(
         fusion_retriever,
-        node_postprocessors=[reranker],
+        node_postprocessors=[reranker, sp],
         response_synthesizer=get_response_synthesizer(
             response_mode = ResponseMode.REFINE
         )
