@@ -51,7 +51,7 @@
             1.文档 -> 生成摘要 (LLM + Prompt)
                原始文档文件夹 -> 向量数据库 faiss-1
                摘要文档文件夹 -> 向量数据库 faiss-2
-               两者建立1v1对应关系
+               两者建立1v1对应关系[‘
 
             2.small-to-big 检索策略
               query -> faiss-2 -> faiss-1
@@ -68,10 +68,27 @@
        具体实施: 写个提示词, 通过大模型来重新生成, 连重新理解用户意图, 再来做检索查询
 
        多路召回方案(相似语义改写)
-              使用大模型, 将用户查询改写成多个语义相近的查询, 提升召回多样性
-              LangChain的MultiQueryRetriever支持多查询召回, 再进行回答问题
-              LLamaIndex的RAGfusion 支持多查询召回, 再进行回答问题
+           使用大模型, 将用户查询改写成多个语义相近的查询, 提升召回多样性
+           LangChain的MultiQueryRetriever支持多查询召回, 再进行回答问题
+           LLamaIndex的RAGfusion 支持多查询召回, 再进行回答问题
 
+####  LlamaIndex 内置了丰富的检索机制，例如：
+       
+       关键字检索
+          - BM25Retriever                      基于 tokenizer 实现的 BM25 经典检索算法
+          - KeywordTableGPTRetriever           使用 GPT 提取检索关键字
+          - KeywordTableSimpleRetriever        使用正则表达式提取检索关键字
+          - KeywordTableRAKERetriever
+          - RAG-Fusion QueryFusionRetriever 
+            https://docs.llamaindex.ai/en/stable/api_reference/retrievers/query_fusion/
+            
+          - 还支持 KnowledgeGraph、SQL、Text-to-SQL
+            https://docs.llamaindex.ai/en/stable/api_reference/retrievers/sql/#llama_index.core.retrievers.NLSQLRetriever
+
+####  检索后处理
+       LlamaIndex 的 Node Postprocessors 检索后处理模块
+       
+              
        查询改写代码: 
        ```
               from langchain.retrievers import MultiQueryRetriever
