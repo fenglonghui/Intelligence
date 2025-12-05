@@ -12,6 +12,7 @@
 
      官网地址：https://www.ragas.io/
 
+     示例参照: /Users/fenglonghui/deep_learnin_models/人工智能基础/03_RAG高级技术/ragas-demo
     
 #### Ragas 评估指标
      
