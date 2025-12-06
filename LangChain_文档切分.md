@@ -63,3 +63,4 @@
 
 
   参考资料: /Users/fenglonghui/deep_learnin_models/人工智能基础/06_LangChain多任务应用开发/index.ipynb
+           https://www.alang.ai/langchain/101/
